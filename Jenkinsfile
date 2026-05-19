@@ -24,10 +24,18 @@ pipeline {
             }
         }
 
-        stage('3. Build Docker Image') {
+        stage('3. Configuration Docker & Build') {
             steps {
+                echo 'Installation automatique de l\'outil Docker dans Jenkins...'
+                // Cette commande installe proprement le client Docker dans le conteneur Jenkins
+                sh '''
+                    if ! command -v docker &> /dev/null; then
+                        apt-get update && apt-get install -y curl
+                        curl -fsSL https://docker.com -o get-docker.sh
+                        sh get-docker.sh
+                    fi
+                '''
                 echo 'Construction de l\'image Docker...'
-                // Utilisation directe du binaire Docker natif partagé via le docker-compose
                 sh "docker build -t ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ."
                 sh "docker tag ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
             }
@@ -36,7 +44,6 @@ pipeline {
         stage('4. Push to Harbor') {
             steps {
                 echo 'Envoi vers Harbor...'
-                // Connexion sécurisée à Harbor via le compte robot Jenkins
                 sh "echo '${HARBOR_CREDS_PSW}' | docker login ${REGISTRY} -u '${HARBOR_CREDS_USR}' --password-stdin"
                 sh "docker push ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG}"
                 sh "docker push ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
@@ -46,15 +53,14 @@ pipeline {
         stage('5. Deploy Local') {
             steps {
                 echo 'Déploiement de l\'application sur le port 81...'
-                // Utilisation du docker compose natif de la machine hôte
-                sh "IMAGE_TAG=${TAG} docker compose up -d --build"
+                sh "IMAGE_TAG=${TAG} docker compose up -d --build app nginx db"
             }
         }
     }
 
     post {
         always {
-            echo 'Nettoyage des identifiants...'
+            echo 'Nettoyage...'
             sh "docker logout ${REGISTRY} || true"
         }
     }
