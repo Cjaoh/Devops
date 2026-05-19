@@ -1,0 +1,35 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # ── Application FastAPI ────────────────────────────────────────
+  - job_name: 'reservation-app'
+    static_configs:
+      - targets: ['app:8000']
+    metrics_path: '/metrics'
+
+  # ── Nginx ──────────────────────────────────────────────────────
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+
+  # ── PostgreSQL ─────────────────────────────────────────────────
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['db:9187']
+
+  # ── Node Exporter (VM Server) ──────────────────────────────────
+  - job_name: 'node-server'
+    static_configs:
+      - targets: ['192.168.43.130:9100']
+    labels:
+      instance: 'vm-server'
+
+  # ── Node Exporter (VM Harbor) ──────────────────────────────────
+  - job_name: 'node-harbor'
+    static_configs:
+      - targets: ['192.168.43.133:9100']
+    labels:
+      instance: 'vm-harbor'

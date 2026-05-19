@@ -1,0 +1,184 @@
+/* ── Reset & base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* ── Pages ───────────────────────────────────────────────────── */
+.page      { display: none; }
+.page.active { display: block; }
+
+/* ── Auth card ───────────────────────────────────────────────── */
+.auth-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  margin: 6vh auto 0;
+}
+
+.auth-card h1      { font-size: 1.6rem; margin-bottom: .25rem; text-align: center; }
+.auth-card .subtitle { text-align: center; color: #64748b; margin-bottom: 1.5rem; }
+
+/* ── Forms ───────────────────────────────────────────────────── */
+.form-group          { margin-bottom: 1rem; }
+.form-group label    { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .35rem; color: #374151; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%; padding: .6rem .85rem;
+  border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: .95rem; color: #1e293b;
+  background: #f9fafb;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none; border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  background: #fff;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .55rem 1.1rem; border-radius: 8px; font-size: .9rem;
+  font-weight: 500; cursor: pointer; border: none; transition: all .15s;
+}
+.btn-primary  { background: #2563eb; color: #fff; }
+.btn-primary:hover  { background: #1d4ed8; }
+.btn-danger   { background: #ef4444; color: #fff; }
+.btn-danger:hover   { background: #dc2626; }
+.btn-outline  { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+.btn-outline:hover  { background: #f3f4f6; }
+.btn-full     { width: 100%; margin-top: .5rem; }
+.btn-sm       { padding: .35rem .75rem; font-size: .82rem; }
+
+.switch-link  { text-align: center; margin-top: 1rem; font-size: .875rem; color: #6b7280; }
+.switch-link a { color: #2563eb; text-decoration: none; font-weight: 500; }
+
+/* ── Alerts ──────────────────────────────────────────────────── */
+.alert          { padding: .7rem 1rem; border-radius: 8px; font-size: .875rem; margin-bottom: 1rem; }
+.alert-error    { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.alert-success  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.hidden         { display: none !important; }
+
+/* ── Navbar ──────────────────────────────────────────────────── */
+.navbar {
+  background: #fff; border-bottom: 1px solid #e5e7eb;
+  padding: .85rem 1.5rem; display: flex;
+  align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.nav-brand  { font-size: 1.15rem; font-weight: 600; color: #1e293b; }
+.nav-user   { display: flex; align-items: center; gap: .75rem; font-size: .875rem; color: #6b7280; }
+
+/* ── Dashboard layout ────────────────────────────────────────── */
+.dashboard  { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* ── Tabs ────────────────────────────────────────────────────── */
+.tabs         { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.tab {
+  padding: .5rem 1.1rem; border-radius: 8px; font-size: .9rem;
+  font-weight: 500; cursor: pointer; border: 1px solid #e5e7eb;
+  background: #fff; color: #6b7280; transition: all .15s;
+}
+.tab.active, .tab:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+.tab-content        { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Section header ──────────────────────────────────────────── */
+.section-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 1rem;
+  flex-wrap: wrap; gap: .5rem;
+}
+.section-header h2 { font-size: 1.15rem; font-weight: 600; }
+.filters { display: flex; gap: .5rem; flex-wrap: wrap; }
+.filters select {
+  padding: .4rem .7rem; border: 1px solid #d1d5db;
+  border-radius: 8px; font-size: .875rem; background: #fff; cursor: pointer;
+}
+
+/* ── Resource cards ──────────────────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.resource-card {
+  background: #fff; border: 1px solid #e5e7eb;
+  border-radius: 10px; padding: 1.1rem;
+  transition: box-shadow .2s;
+}
+.resource-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+.resource-card .rc-name    { font-weight: 600; font-size: 1rem; margin-bottom: .3rem; }
+.resource-card .rc-type    { font-size: .8rem; color: #fff; border-radius: 20px; padding: .15rem .6rem; display: inline-block; margin-bottom: .5rem; }
+.resource-card .rc-desc    { font-size: .875rem; color: #6b7280; margin-bottom: .6rem; min-height: 2.5rem; }
+.resource-card .rc-footer  { display: flex; align-items: center; justify-content: space-between; }
+
+.badge-vehicle   { background: #2563eb; }
+.badge-equipment { background: #7c3aed; }
+.badge-room      { background: #059669; }
+.badge-other     { background: #6b7280; }
+
+.status-dot {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .8rem; font-weight: 500;
+}
+.status-dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+.status-available   { color: #059669; }
+.status-available::before   { background: #059669; }
+.status-maintenance { color: #d97706; }
+.status-maintenance::before { background: #d97706; }
+.status-retired     { color: #ef4444; }
+.status-retired::before     { background: #ef4444; }
+
+/* ── Reservation table ───────────────────────────────────────── */
+.reservations-table {
+  width: 100%; border-collapse: collapse;
+  background: #fff; border-radius: 10px; overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.reservations-table th {
+  background: #f8fafc; padding: .75rem 1rem;
+  text-align: left; font-size: .82rem; font-weight: 600;
+  color: #6b7280; border-bottom: 1px solid #e5e7eb;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.reservations-table td {
+  padding: .75rem 1rem; font-size: .875rem;
+  border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+}
+.reservations-table tr:last-child td { border-bottom: none; }
+.reservations-table tr:hover td { background: #f8fafc; }
+
+.pill {
+  display: inline-block; padding: .2rem .65rem;
+  border-radius: 20px; font-size: .78rem; font-weight: 500;
+}
+.pill-confirmed  { background: #dcfce7; color: #166534; }
+.pill-cancelled  { background: #fee2e2; color: #991b1b; }
+.pill-completed  { background: #e0e7ff; color: #3730a3; }
+.pill-pending    { background: #fef3c7; color: #92400e; }
+
+.empty-state {
+  text-align: center; padding: 3rem 1rem; color: #9ca3af; font-size: .95rem;
+}
+
+/* ── Form card ───────────────────────────────────────────────── */
+.form-card {
+  background: #fff; border: 1px solid #e5e7eb;
+  border-radius: 10px; padding: 1.75rem;
+  max-width: 640px;
+}
+.form-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; }

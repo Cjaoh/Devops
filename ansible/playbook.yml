@@ -1,0 +1,224 @@
+---
+# ── Déploiement de l'application de réservation sur la VM Server ──
+- name: Déployer Reservation App sur VM Server (192.168.43.130)
+  hosts: server
+  become: yes
+
+  vars:
+    app_dir:    /opt/reservation-app
+    harbor_ip:  "192.168.43.133"
+    cert_dir:   "/etc/docker/certs.d/{{ harbor_ip }}"
+
+    # Base de données
+    db_host:        "db"
+    db_port:        5432
+    db_name:        "reservations_db"
+    db_user:        "app_user"
+    db_password:    "changeme_strong_password"
+
+    # JWT
+    jwt_secret_key:     "changeme_super_secret_jwt_key_256bits"
+    jwt_algorithm:      "HS256"
+    jwt_expire_minutes: 60
+
+    # SMTP
+    smtp_host:     "localhost"
+    smtp_port:     587
+    smtp_user:     "noreply@example.com"
+    smtp_password: "changeme_smtp_password"
+    smtp_from:     "noreply@example.com"
+
+    # Application
+    app_env:  "production"
+    app_port: 8000
+
+  tasks:
+
+    # ────────────────────────────────────────────────────────────
+    # 1. Système — Docker
+    # ────────────────────────────────────────────────────────────
+    - name: Mettre à jour le cache apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      ignore_errors: yes        # ← non-bloquant si pas de réseau
+
+    - name: Vérifier si Docker est déjà installé
+      command: docker --version
+      register: docker_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Installer les dépendances système (si absentes)
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - curl
+          - python3-pip
+        state: present
+      ignore_errors: yes        # ← non-bloquant si apt inaccessible
+      when: docker_check.rc != 0
+
+    - name: Démarrer et activer Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ajouter lms au groupe docker
+      user:
+        name: lms
+        groups: docker
+        append: yes
+
+    # ────────────────────────────────────────────────────────────
+    # 2. Certificat TLS Harbor (HTTPS auto-signé)
+    # ────────────────────────────────────────────────────────────
+    - name: Créer le dossier certificat Docker pour Harbor
+      file:
+        path: "{{ cert_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copier le certificat CA Harbor
+      copy:
+        src: ../tls/harbor-ca.crt
+        dest: "{{ cert_dir }}/ca.crt"
+        mode: '0644'
+      ignore_errors: yes        # ← non-bloquant si fichier absent
+
+    - name: Installer le certificat CA au niveau système
+      copy:
+        src: ../tls/harbor-ca.crt
+        dest: /usr/local/share/ca-certificates/harbor-ca.crt
+        mode: '0644'
+      ignore_errors: yes
+
+    - name: Mettre à jour les certificats CA système
+      command: update-ca-certificates
+      ignore_errors: yes
+
+    - name: Redémarrer Docker pour prendre en compte le certificat
+      systemd:
+        name: docker
+        state: restarted
+
+    # ────────────────────────────────────────────────────────────
+    # 3. Connexion à Harbor
+    # ────────────────────────────────────────────────────────────
+    - name: Se connecter à Harbor (robot account)
+      command: >
+        docker login {{ harbor_ip }}
+        -u {{ harbor_user }}
+        -p {{ harbor_pass }}
+      no_log: true
+
+    # ────────────────────────────────────────────────────────────
+    # 4. Préparer le répertoire de déploiement
+    # ────────────────────────────────────────────────────────────
+    - name: Créer le répertoire de l'application
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: lms
+        group: lms
+        mode: '0755'
+
+    - name: Créer les sous-dossiers nécessaires
+      file:
+        path: "{{ app_dir }}/{{ item }}"
+        state: directory
+        owner: lms
+        group: lms
+        mode: '0755'
+      loop:
+        - docker
+        - frontend
+
+    # ────────────────────────────────────────────────────────────
+    # 5. Copier les fichiers de configuration
+    # ────────────────────────────────────────────────────────────
+    - name: Copier docker-compose.yml
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: lms
+        group: lms
+        mode: '0644'
+
+    - name: Copier nginx.conf
+      copy:
+        src: ../docker/nginx.conf
+        dest: "{{ app_dir }}/docker/nginx.conf"
+        owner: lms
+        group: lms
+        mode: '0644'
+      ignore_errors: yes
+
+    - name: Copier les fichiers frontend
+      copy:
+        src: ../frontend/
+        dest: "{{ app_dir }}/frontend/"
+        owner: lms
+        group: lms
+        mode: '0644'
+      ignore_errors: yes
+
+    # ────────────────────────────────────────────────────────────
+    # 6. Générer le fichier .env
+    # ────────────────────────────────────────────────────────────
+    - name: Générer le fichier .env depuis le template
+      template:
+        src: roles/app/templates/env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: lms
+        group: lms
+        mode: '0600'
+
+    # ────────────────────────────────────────────────────────────
+    # 7. Pull de la nouvelle image
+    # ────────────────────────────────────────────────────────────
+    - name: Télécharger la nouvelle image depuis Harbor
+      command: docker pull {{ image_name }}:{{ image_tag }}
+
+    # ────────────────────────────────────────────────────────────
+    # 8. Déploiement avec Docker Compose
+    # ────────────────────────────────────────────────────────────
+    - name: Arrêter les anciens conteneurs
+      command: docker compose down --remove-orphans
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: yes
+
+    - name: Lancer l'application avec Docker Compose
+      command: docker compose up -d --pull always
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG:    "{{ image_tag }}"
+        HARBOR_URL:   "{{ harbor_ip }}"
+
+    # ────────────────────────────────────────────────────────────
+    # 9. Vérification post-déploiement
+    # ────────────────────────────────────────────────────────────
+    - name: Attendre que l'application réponde (healthcheck)
+      uri:
+        url: "http://localhost:80/health"
+        method: GET
+        status_code: 200
+      register: health_result
+      retries: 10
+      delay: 5
+      until: health_result.status == 200
+      ignore_errors: yes        # ← non-bloquant si healthcheck échoue
+
+    - name: Afficher le statut des conteneurs
+      command: docker compose ps
+      args:
+        chdir: "{{ app_dir }}"
+      register: compose_status
+
+    - name: Résultat du déploiement
+      debug:
+        msg: "{{ compose_status.stdout_lines }}"

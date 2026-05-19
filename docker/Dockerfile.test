@@ -1,0 +1,45 @@
+# ──────────────────────────────────────────────
+# Dockerfile.test — Image dédiée aux tests unitaires
+# Utilise starlette.testclient (sync) + SQLite
+# ──────────────────────────────────────────────
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Installation des dépendances applicatives + outils de test
+COPY requirements.txt .
+RUN pip install --no-cache-dir \
+    -r requirements.txt \
+    pytest \
+    pytest-cov \
+    httpx \
+    requests
+
+# Copie du code source et des tests
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+# Création du dossier rapports
+RUN mkdir -p reports
+
+# Variables d'environnement pour les tests (SQLite)
+ENV PYTHONPATH=/app \
+    DATABASE_URL="sqlite:///./test_ci.db" \
+    SECRET_KEY="test-secret-key-for-ci-only" \
+    ALGORITHM="HS256" \
+    ACCESS_TOKEN_EXPIRE_MINUTES="60" \
+    SMTP_HOST="localhost" \
+    SMTP_PORT="1025" \
+    SMTP_USER="test@example.com" \
+    SMTP_PASSWORD="test" \
+    SMTP_FROM="test@example.com" \
+    APP_ENV="test"
+
+# Lancement des tests — l'échec = échec du build Docker
+RUN useradd -m -u 1001 testuser && chown -R testuser:testuser /app
+USER testuser
+
+RUN pytest tests/ -v --tb=short \
+    --cov=src \
+    --cov-report=xml:reports/coverage.xml \
+    --cov-report=term-missing

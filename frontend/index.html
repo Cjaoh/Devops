@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de Réservation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── PAGE LOGIN ─────────────────────────────── -->
+  <div id="page-login" class="page active">
+    <div class="auth-card">
+      <h1>🗓 Réservation</h1>
+      <p class="subtitle">Connectez-vous à votre espace</p>
+
+      <div id="login-error" class="alert alert-error hidden"></div>
+
+      <div class="form-group">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="votre@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Mot de passe</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="login()">Se connecter</button>
+      <p class="switch-link">Pas de compte ? <a href="#" onclick="showPage('page-register')">S'inscrire</a></p>
+    </div>
+  </div>
+
+  <!-- ── PAGE REGISTER ──────────────────────────── -->
+  <div id="page-register" class="page">
+    <div class="auth-card">
+      <h1>🗓 Inscription</h1>
+      <p class="subtitle">Créer votre compte</p>
+
+      <div id="register-error" class="alert alert-error hidden"></div>
+      <div id="register-success" class="alert alert-success hidden"></div>
+
+      <div class="form-group">
+        <label for="reg-name">Nom complet</label>
+        <input type="text" id="reg-name" placeholder="Prénom Nom">
+      </div>
+      <div class="form-group">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" placeholder="votre@email.com">
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Mot de passe</label>
+        <input type="password" id="reg-password" placeholder="Min. 8 caract., 1 maj., 1 chiffre">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="register()">Créer mon compte</button>
+      <p class="switch-link">Déjà un compte ? <a href="#" onclick="showPage('page-login')">Se connecter</a></p>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD ──────────────────────────────── -->
+  <div id="page-dashboard" class="page">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="nav-brand">🗓 Réservation</div>
+      <div class="nav-user">
+        <span id="nav-username"></span>
+        <button class="btn btn-sm btn-outline" onclick="logout()">Déconnexion</button>
+      </div>
+    </nav>
+
+    <div class="dashboard">
+
+      <!-- Onglets -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('tab-resources', this)">📦 Ressources</button>
+        <button class="tab" onclick="switchTab('tab-reservations', this)">📋 Mes réservations</button>
+        <button class="tab" onclick="switchTab('tab-new', this)">➕ Nouvelle réservation</button>
+      </div>
+
+      <!-- ── Onglet Ressources ──────────────────── -->
+      <div id="tab-resources" class="tab-content active">
+        <div class="section-header">
+          <h2>Ressources disponibles</h2>
+          <div class="filters">
+            <select id="filter-type" onchange="loadResources()">
+              <option value="">Tous les types</option>
+              <option value="vehicle">Véhicules</option>
+              <option value="equipment">Équipements</option>
+              <option value="room">Salles</option>
+              <option value="other">Autres</option>
+            </select>
+            <select id="filter-status" onchange="loadResources()">
+              <option value="available">Disponibles</option>
+              <option value="">Tous les statuts</option>
+              <option value="maintenance">En maintenance</option>
+            </select>
+          </div>
+        </div>
+        <div id="resources-list" class="card-grid"></div>
+      </div>
+
+      <!-- ── Onglet Mes réservations ────────────── -->
+      <div id="tab-reservations" class="tab-content">
+        <div class="section-header">
+          <h2>Mes réservations</h2>
+          <button class="btn btn-sm btn-outline" onclick="loadReservations()">🔄 Actualiser</button>
+        </div>
+        <div id="reservations-list"></div>
+      </div>
+
+      <!-- ── Onglet Nouvelle réservation ───────── -->
+      <div id="tab-new" class="tab-content">
+        <div class="form-card">
+          <h2>Nouvelle réservation</h2>
+
+          <div id="new-error"   class="alert alert-error hidden"></div>
+          <div id="new-success" class="alert alert-success hidden"></div>
+
+          <div class="form-group">
+            <label for="res-resource">Ressource</label>
+            <select id="res-resource">
+              <option value="">— Sélectionner une ressource —</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="res-start">Début</label>
+              <input type="datetime-local" id="res-start">
+            </div>
+            <div class="form-group">
+              <label for="res-end">Fin</label>
+              <input type="datetime-local" id="res-end">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="res-purpose">Motif (optionnel)</label>
+            <input type="text" id="res-purpose" placeholder="Ex : Livraison client, Formation…">
+          </div>
+          <div class="form-group">
+            <label for="res-notes">Notes (optionnel)</label>
+            <textarea id="res-notes" rows="3" placeholder="Informations complémentaires…"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="makeReservation()">Confirmer la réservation</button>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+  </div><!-- /page-dashboard -->
+
+  <script src="app.js"></script>
+</body>
+</html>

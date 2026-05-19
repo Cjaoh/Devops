@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    container_name: reservation_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-reservations}
+      POSTGRES_USER:     ${POSTGRES_USER:-reserv_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reserv_user} -d ${POSTGRES_DB:-reservations}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ${HARBOR_URL:-192.168.43.133}/reservation-app/app:${IMAGE_TAG:-latest}
+    container_name: reservation_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:  postgresql://${POSTGRES_USER:-reserv_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-reservations}
+      SECRET_KEY:    ${SECRET_KEY}
+      SMTP_HOST:     ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT:     ${SMTP_PORT:-587}
+      SMTP_USER:     ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM:     ${SMTP_FROM:-noreply@reservation.local}
+      ENVIRONMENT:   production
+    networks:
+      - app_net
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: reservation_nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - app_net
+
+volumes:
+  db_data:
+
+networks:
+  app_net:
+    driver: bridge

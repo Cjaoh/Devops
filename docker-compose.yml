@@ -1,0 +1,96 @@
+services:
+
+  # ──────────────────────────────────────────
+  # Jenkins intégré avec accès Docker Root
+  # ──────────────────────────────────────────
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    user: root  # INDISPENSABLE pour utiliser le docker.sock sans erreur de permission
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # Interface web Jenkins
+      - "50000:50000" # Agents Jenkins
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  # Accès Docker natif d'Ubuntu
+    environment:
+      - JAVA_OPTS=-Xmx2048m -Xms512m
+    networks:
+      - app_net
+
+  # ──────────────────────────────────────────
+  # Base de données PostgreSQL
+  # ──────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: reservation_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-reservations}
+      POSTGRES_USER:     ${POSTGRES_USER:-reserv_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mon_password_defaut}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-reserv_user} -d $${POSTGRES_DB:-reservations}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────
+  # Application FastAPI
+  # ──────────────────────────────────────────
+  app:
+    # Harmonisation avec Harbor : utilise localhost et le tag dynamique de Jenkins
+    image: ${HARBOR_URL:-localhost}/${PROJECT:-devops}/${IMAGE:-resource-app}:${IMAGE_TAG:-latest}
+    container_name: reservation_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:  postgresql://${POSTGRES_USER:-reserv_user}:${POSTGRES_PASSWORD:-mon_password_defaut}@db:5432/${POSTGRES_DB:-reservations}
+      SECRET_KEY:    ${SECRET_KEY:-une_cle_de_secours_jwt_123}
+      SMTP_HOST:     ${SMTP_HOST:-//gmail.com}
+      SMTP_PORT:     ${SMTP_PORT:-587}
+      SMTP_USER:     ${SMTP_USER:-test@gmail.com}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-test_password}
+      SMTP_FROM:     ${SMTP_FROM:-noreply@reservation.local}
+      ENVIRONMENT:   production
+    networks:
+      - app_net
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ──────────────────────────────────────────
+  # Reverse proxy Nginx (Port changé en 81 pour éviter le conflit avec Harbor !)
+  # ──────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: reservation_nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "81:80"  # Vous accéderez à votre application sur http://localhost:81
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - app_net
+
+volumes:
+  jenkins_home:
+  db_data:
+
+networks:
+  app_net:
+    driver: bridge

@@ -1,0 +1,45 @@
+---
+# Ce fichier est le point d'entrée du rôle app.
+# Le déploiement complet est défini dans ansible/playbook.yml.
+# Ce rôle peut être utilisé pour des déploiements modulaires.
+
+- name: Vérifier que Docker est actif
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Créer le répertoire de l'application
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: lms
+    group: lms
+    mode: '0755'
+
+- name: Copier docker-compose.yml
+  copy:
+    src: docker-compose.yml
+    dest: "{{ app_dir }}/docker-compose.yml"
+    owner: lms
+    group: lms
+    mode: '0644'
+
+- name: Déployer le fichier .env
+  template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: lms
+    group: lms
+    mode: '0600'
+
+- name: Pull image depuis Harbor
+  command: docker pull {{ image_name }}:{{ image_tag }}
+
+- name: Redémarrer les conteneurs
+  command: docker compose up -d --pull always
+  args:
+    chdir: "{{ app_dir }}"
+  environment:
+    IMAGE_TAG:  "{{ image_tag }}"
+    HARBOR_URL: "{{ harbor_ip }}"

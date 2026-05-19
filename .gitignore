@@ -1,0 +1,49 @@
+# ── Environnement ─────────────────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ── Tests & Coverage ──────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+test.db
+reports/
+
+# ── Sécurité ──────────────────────────────────────────────────────
+cosign.key
+cosign.pub
+*.key
+*.pem
+!tls/README.md
+
+# ── IDE ───────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Docker ────────────────────────────────────────────────────────
+*.tar
+
+# ── Ansible ───────────────────────────────────────────────────────
+*.retry
+cosign.key
+cosign.pub
