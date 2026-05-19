@@ -27,33 +27,33 @@ pipeline {
         stage('3. Téléchargement des outils & Build Image') {
             steps {
                 echo 'Récupération de l\'outil Docker...'
-                // Télécharge l'exécutable Docker officiel pour que Jenkins puisse s'en servir
+                // Utilisation de l'URL brute et stable des binaires de Docker
                 sh '''
-                    if [ ! -f ./docker/docker ]; then
+                    if [ ! -f ./docker_bin/docker ]; then
+                        mkdir -p ./docker_bin
                         curl -fsSL https://docker.com -o docker.tgz
-                        tar -xzvf docker.tgz
+                        tar -xzvf docker.tgz --strip-components=1 -C ./docker_bin
                         rm docker.tgz
                     fi
                 '''
                 echo 'Construction de l\'image Docker...'
-                sh "./docker/docker build -t ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ."
-                sh "./docker/docker tag ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
+                sh "./docker_bin/docker build -t ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ."
+                sh "./docker_bin/docker tag ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG} ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
             }
         }
 
         stage('4. Push to Harbor') {
             steps {
                 echo 'Envoi vers Harbor...'
-                sh "./docker/docker login ${REGISTRY} -u '${HARBOR_CREDS_USR}' -p '${HARBOR_CREDS_PSW}'"
-                sh "./docker/docker push ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG}"
-                sh "./docker/docker push ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
+                sh "./docker_bin/docker login ${REGISTRY} -u '${HARBOR_CREDS_USR}' -p '${HARBOR_CREDS_PSW}'"
+                sh "./docker_bin/docker push ${REGISTRY}/${PROJECT}/${IMAGE}:${TAG}"
+                sh "./docker_bin/docker push ${REGISTRY}/${PROJECT}/${IMAGE}:latest"
             }
         }
 
         stage('5. Deploy Local') {
             steps {
                 echo 'Déploiement sur le port 81...'
-                // Téléchargement de docker-compose si manquant
                 sh '''
                     if [ ! -f ./docker-compose-bin ]; then
                         curl -SL https://github.com -o ./docker-compose-bin
